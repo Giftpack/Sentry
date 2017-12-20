@@ -1,0 +1,98 @@
+version: '2'
+
+volumes:
+   pgdb:
+
+services:
+  redis:
+    image: redis
+    container_name: sentry-redis
+
+  postgres:
+    image: postgres
+    container_name: sentry-postgres
+    environment:
+      POSTGRES_USER: sentry
+      POSTGRES_PASSWORD: sentry
+      POSTGRES_DBNAME: sentry
+      POSTGRES_DBUSER: sentry
+      POSTGRES_DBPASS: sentry
+    volumes:
+     - pgdb:/var/lib/postgresql/data
+
+  #smtp:
+    #image: tianon/exim4
+    #container_name: sentry-smtp
+
+  sentry:
+    image: sentry
+    container_name: sentry-service
+    links:
+     #- smtp
+     - redis
+     - postgres
+    ports:
+     - 12700:9000
+    environment:
+      SENTRY_SECRET_KEY: ${SENTRY_SECRET}
+      SENTRY_POSTGRES_HOST: postgres
+      SENTRY_DB_USER: sentry
+      SENTRY_DB_PASSWORD: sentry
+      SENTRY_REDIS_HOST: redis
+      SENTRY_SERVER_EMAIL: ${SENTRY_SERVICE_EMAIL_USER}
+      SERVER_EMAIL: ${SENTRY_SERVICE_EMAIL_USER}
+      SENTRY_EMAIL_HOST: smtp.gmail.com
+      SENTRY_EMAIL_PORT: 587
+      SENTRY_EMAIL_USER: ${SENTRY_SERVICE_EMAIL_USER}
+      SENTRY_EMAIL_PASSWORD: ${SENTRY_SERVICE_EMAIL_PASSWORD}
+      SENTRY_EMAIL_USE_TLS: 'true'
+      GITHUB_APP_ID: ${SENTRY_GITHUB_APP_ID}
+      GITHUB_API_SECRET: ${SENTRY_GITHUB_API_SECRET}
+      #GITHUB_EXTENDED_PERMISSIONS:
+       #- 'repo'
+      SOCIAL_AUTH_REDIRECT_IS_HTTPS: 'true'
+    restart: always
+
+  cron:
+    image: sentry
+    links:
+     #- smtp
+     - redis
+     - postgres
+    command: "sentry run cron"
+    environment:
+      SENTRY_SECRET_KEY: ${SENTRY_SECRET}
+      SENTRY_POSTGRES_HOST: postgres
+      SENTRY_DB_USER: sentry
+      SENTRY_DB_PASSWORD: sentry
+      SENTRY_REDIS_HOST: redis
+      SENTRY_SERVER_EMAIL: ${SENTRY_SERVICE_EMAIL_USER}
+      SERVER_EMAIL: ${SENTRY_SERVICE_EMAIL_USER}
+      SENTRY_EMAIL_HOST: smtp.gmail.com
+      SENTRY_EMAIL_PORT: 587
+      SENTRY_EMAIL_USER: ${SENTRY_SERVICE_EMAIL_USER}
+      SENTRY_EMAIL_PASSWORD: ${SENTRY_SERVICE_EMAIL_PASSWORD}
+      SENTRY_EMAIL_USE_TLS: 'true'
+    restart: always
+
+  worker:
+    image: sentry
+    links:
+     #- smtp
+     - redis
+     - postgres
+    command: "sentry run worker"
+    environment:
+      SENTRY_SECRET_KEY: ${SENTRY_SECRET}
+      SENTRY_POSTGRES_HOST: postgres
+      SENTRY_DB_USER: sentry
+      SENTRY_DB_PASSWORD: sentry
+      SENTRY_REDIS_HOST: redis
+      SENTRY_SERVER_EMAIL: ${SENTRY_SERVICE_EMAIL_USER}
+      SERVER_EMAIL: ${SENTRY_SERVICE_EMAIL_USER}
+      SENTRY_EMAIL_HOST: smtp.gmail.com
+      SENTRY_EMAIL_PORT: 587
+      SENTRY_EMAIL_USER: ${SENTRY_SERVICE_EMAIL_USER}
+      SENTRY_EMAIL_PASSWORD: ${SENTRY_SERVICE_EMAIL_PASSWORD}
+      SENTRY_EMAIL_USE_TLS: 'true'
+    restart: always
